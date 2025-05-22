@@ -8,7 +8,6 @@ import java.util.List;
 
 public class Edit_Panel {
 
-    private final TableRowSorter<DefaultTableModel> sorter;
     private final DefaultTableModel model;
     private final List<JComponent> fields;
     private final SQLHandler sqlHandler;
@@ -16,9 +15,10 @@ public class Edit_Panel {
     private Connection con;
     private final List<Integer> pages;
     private int tabIndex;
+    private List<String> search;
+    private List<String> sortBy;
 
-    public Edit_Panel(TableRowSorter<DefaultTableModel> sorter, DefaultTableModel model, List<JComponent> fields, SQLHandler sqlHandler, JTable table, Connection con, List<Integer> pages, int tabIndex) {
-        this.sorter = sorter;
+    public Edit_Panel(DefaultTableModel model, List<JComponent> fields, SQLHandler sqlHandler, JTable table, Connection con, List<Integer> pages, int tabIndex, List<String> search, List<String> sort) {
         this.model = model;
         this.fields = fields;
         this.sqlHandler = sqlHandler;
@@ -26,6 +26,8 @@ public class Edit_Panel {
         this.con = con;
         this.pages = pages;
         this.tabIndex = tabIndex;
+        this.search = search;
+        this.sortBy = sort;
     }
 
     private JPanel createCRUDBtnPanel(String f) {
@@ -35,11 +37,17 @@ public class Edit_Panel {
         JButton upd = new JButton("Update");
 
         add.addActionListener(e-> {
-            new Create(sqlHandler, fields, f, con, pages, tabIndex).actionPerformed(e);
-            GUI.loadData(model, sqlHandler, pages.get(tabIndex));
+            new Create(sqlHandler, fields, f, con, pages, tabIndex, search, sortBy).actionPerformed(e);
+            GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
         });
-        del.addActionListener(new Delete(model, table, sorter, sqlHandler, tabIndex, pages));
-        upd.addActionListener(new Update(model, table, fields, sorter, sqlHandler, pages, tabIndex, f, con));
+        del.addActionListener(e -> {
+            new Delete(model, table, sqlHandler, tabIndex, pages).actionPerformed(e);
+            GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+        });
+        upd.addActionListener(e -> {
+            new Update(model, table, fields, sqlHandler, pages, tabIndex, f, con, search, sortBy).actionPerformed(e);
+            GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+        });
 
 
         return Layout.CRUDBtnPanelLayout(crudBtnPanel, add, del, upd);

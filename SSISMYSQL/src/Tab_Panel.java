@@ -2,39 +2,52 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.List;
 
 public class Tab_Panel {
-    private final TableRowSorter<DefaultTableModel> sorter;
     private final DefaultTableModel model;
     private final SQLHandler sqlHandler;
-    private List<Integer>pages;
-    private int tabIndex;
+    private final List<Integer>pages;
+    private final int tabIndex;
+    private List<String> search;
+    private List<String> sortBy;
 
-    public Tab_Panel(TableRowSorter<DefaultTableModel> sorter, DefaultTableModel model, SQLHandler sqlHandler, List<Integer> pages, int tabIndex) {
-        this.sorter = sorter;
+    public Tab_Panel(DefaultTableModel model, SQLHandler sqlHandler, List<Integer> pages, int tabIndex, List<String> search, List<String> sortBy) {
         this.model = model;
         this.sqlHandler = sqlHandler;
         this.pages = pages;
         this.tabIndex = tabIndex;
+        this.search = search;
+        this.sortBy = sortBy;
     }
 
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel();
         JTextField srchfields = new JTextField();
-        JComboBox<String> srchBy = new JComboBox<>();
-        JLabel srchlbl = new JLabel("Search By:");
+        JComboBox<String> sortByBox = new JComboBox<>();
+        JLabel sortlbl = new JLabel("Sort By:");
 
         String[] srch = sqlHandler.getHeaders();
         for (String s : srch) {
-            srchBy.addItem(s);
+            sortByBox.addItem(s);
         }
 
-        srchfields.addKeyListener(srchKeyListener(srchfields, srchBy));
+        sortByBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String searchString = search.get(tabIndex);
+                String sortString = (String) e.getItem();
+                String sort = sortString.toLowerCase().replace(" ", "_");
+                sortBy.set(tabIndex, sort);
+                    GUI.loadData(model, sqlHandler, pages.get(tabIndex), searchString, sortBy.get(tabIndex));
+            }
+        });
 
-        return Layout.SearchPanelLayout(searchPanel, srchfields, srchlbl, srchBy);
+        srchfields.addKeyListener(srchKeyListener(srchfields, sortByBox));
+
+        return Layout.SearchPanelLayout(searchPanel, srchfields, sortlbl, sortByBox);
     }
 
     private JPanel createPagePanel() {
@@ -47,7 +60,7 @@ public class Tab_Panel {
             if (page > 1) {
                 page--;
                 pages.set(tabIndex, page);
-                GUI.loadData(model, sqlHandler, page);
+                GUI.loadData(model, sqlHandler, page, search.get(tabIndex), sortBy.get(tabIndex));
                 pageLbl.setText("Page: " + pages.get(tabIndex));
             }
         });
@@ -57,7 +70,7 @@ public class Tab_Panel {
             if ((page * 17) < totalCnt) {
                 page++;
                 pages.set(tabIndex, page);
-                GUI.loadData(model, sqlHandler, page);
+                GUI.loadData(model, sqlHandler, page, search.get(tabIndex), sortBy.get(tabIndex));
                 pageLbl.setText("Page: " + pages.get(tabIndex));
             }
         });
@@ -78,31 +91,23 @@ public class Tab_Panel {
 
         tabPanel.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0)));
         editTable.addActionListener(e -> editTableActionPerformed(tabPanel));
-        refresh.addActionListener(e -> GUI.loadData(model, sqlHandler, pages.get(tabIndex)));
+        refresh.addActionListener(e -> GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex)));
 
 
         return Layout.TabPanelLayout(tabPanel, sp, tabTitle, editTable, searchPanel, refresh, pagePanel);
     }
 
-    private KeyAdapter srchKeyListener(JTextField search, JComboBox<String> srchBy) {
+    private KeyAdapter srchKeyListener(JTextField tsearch, JComboBox<String> srchBy) {
         return new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                String Search = search.getText().trim().toLowerCase();
-                String SrchBy = (String) srchBy.getSelectedItem();
-
-                if (SrchBy == null) return;
-
-                int column = -1;
-                String[] colName = sqlHandler.getHeaders();
-                for (int i = 0; i <colName.length; i++) {
-                    if (colName[i].equals(SrchBy)) {
-                        column = i;
-                        break;
-                    }
+                String searchString = tsearch.getText();
+                search.set(tabIndex, searchString);
+                if (sortBy != null) {
+                    String sort = sortBy.get(tabIndex).toLowerCase().replace(" ", "_");
+                    GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sort);
                 }
-                if (column == -1) return;
-                sorter.setRowFilter(RowFilter.regexFilter(("(?i)") + Search, column));
+
             }
 
         };

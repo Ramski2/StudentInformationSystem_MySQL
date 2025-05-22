@@ -13,17 +13,21 @@ public class Create implements ActionListener {
     private Connection con;
     private List<Integer> pages;
     private int tabIndex;
+    private List<String> search;
+    private List<String> sortBy;
 
-    public Create(SQLHandler sqlHandler, List<JComponent> fields, String f, Connection con, List<Integer> pages, int tabIndex){
+    public Create(SQLHandler sqlHandler, List<JComponent> fields, String f, Connection con, List<Integer> pages, int tabIndex, List<String> search, List<String> sortBy){
         this.sqlHandler = sqlHandler;
         this.fields = fields;
         this.f = f;
         this.con = con;
         this.pages = pages;
         this.tabIndex = tabIndex;
+        this.search = search;
+        this.sortBy = sortBy;
     }
     public boolean Compare(String[] data){
-        List<String[]> sqlData = sqlHandler.readPageSQL(pages.get(tabIndex));
+        List<String[]> sqlData = sqlHandler.readPageSQL(pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
         for (String[] cData : sqlData) {
             if (cData[0].equals(data[0])) {
                 return true;

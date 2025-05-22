@@ -61,17 +61,25 @@ public class SQLHandler {
         }
         return data;
     }
-    public List<String[]> readPageSQL(int page){
+    public List<String[]> readPageSQL(int page, String search, String sort){
         List<String[]> data = new ArrayList<>();
         String[] sqlHeader = SQLHeaders();
-        System.out.println(sqlHeader[1]);
+        List<String> validateSort = List.of(sqlHeader);
+        if (!validateSort.contains(sort)){
+            sort = (sqlHeader[0]);
+        }
         int pageSize = 17;
         int offset = (page - 1) * pageSize;
-        String sql = "SELECT * FROM ssis." + table + " ORDER BY " + sqlHeader[1] +  "," + sqlHeader[0] + " ASC LIMIT ? OFFSET ?";
+
+        String sql = "SELECT * FROM ssis." + table + " WHERE CONCAT_WS " + " (' ', " + String.join(",", sqlHeader) + ")" + " LIKE ?" +  " ORDER BY " + sort + " ASC LIMIT ? OFFSET ?";
         System.out.println(sql);
+        String keyword = "%" + search + "%";
+        System.out.println(keyword);
+
         try(PreparedStatement pst = con.prepareStatement(sql)){
-            pst.setInt(1, pageSize);
-            pst.setInt(2, offset);
+            pst.setString(1, keyword);
+            pst.setInt(2, pageSize);
+            pst.setInt(3, offset);
 
             ResultSet rs = pst.executeQuery();
             int colCount = rs.getMetaData().getColumnCount();

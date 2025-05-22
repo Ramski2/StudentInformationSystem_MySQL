@@ -14,12 +14,16 @@ public class Fields {
     private final Connection con;
     private List<Integer> pages;
     private int tabIndex;
+    private List<String> search;
+    private List<String> sortBy;
 
-    public Fields(String[] table, Connection con, List<Integer> pages, int tabIndex) {
+    public Fields(String[] table, Connection con, List<Integer> pages, int tabIndex, List<String> search, List<String> sortBy) {
         Fields.table = table;
         this.con = con;
         this.pages = pages;
         this.tabIndex = tabIndex;
+        this.search = search;
+        this.sortBy = sortBy;
     }
 
 
@@ -215,7 +219,7 @@ public class Fields {
         JButton save = new JButton("Save");
 
         save.addActionListener(e-> {
-            new Create(sqlHandler, fields, table[index], con, pages, tabIndex).actionPerformed(e);
+            new Create(sqlHandler, fields, table[index], con, pages, tabIndex, search, sortBy).actionPerformed(e);
             isDialogOpen = false;
             refreshfk(fk, f);
             dialog.dispose();

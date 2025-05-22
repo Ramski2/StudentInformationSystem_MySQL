@@ -9,18 +9,12 @@ import java.util.List;
 public class Delete implements ActionListener {
     private final DefaultTableModel model;
     private final JTable table;
-    private final TableRowSorter<DefaultTableModel> sorter;
     private final SQLHandler sqlHandler;
-    private List<Integer> pages;
-    private int tabIndex;
 
-    public Delete(DefaultTableModel model, JTable table, TableRowSorter<DefaultTableModel> sorter, SQLHandler sqlHandler, int tabIndex, List<Integer> pages){
+    public Delete(DefaultTableModel model, JTable table, SQLHandler sqlHandler, int tabIndex, List<Integer> pages){
         this.model = model;
         this.table = table;
-        this.sorter = sorter;
         this.sqlHandler = sqlHandler;
-        this.pages = pages;
-        this.tabIndex = tabIndex;
     }
 
     @Override
@@ -34,10 +28,9 @@ public class Delete implements ActionListener {
 
             if (confirm == JOptionPane.YES_OPTION) {
                 for (int i = selectedRows.length - 1; i >= 0; i--) {
-                    int rowIndex = sorter.convertRowIndexToModel(selectedRows[i]);
+                    int rowIndex = selectedRows[i];
                     String delVal = (String) model.getValueAt(rowIndex, 0);
                     sqlHandler.deletefromDb(delVal);
-                    GUI.loadData(model, sqlHandler, pages.get(tabIndex));
                 }
                 JOptionPane.showMessageDialog(null, "Data Deleted Successfully!", null, JOptionPane.INFORMATION_MESSAGE);
             }

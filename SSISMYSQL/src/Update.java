@@ -1,37 +1,37 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
-import java.util.Arrays;
 import java.util.List;
 
 public class Update implements ActionListener {
     private final DefaultTableModel model;
     private final JTable table;
     private final List<JComponent> fields;
-    private final TableRowSorter<DefaultTableModel> sorter;
     private final SQLHandler sqlHandler;
-    private List<Integer> pages;
-    private int tabIndex;
-    private String f;
-    private Connection con;
+    private final List<Integer> pages;
+    private final int tabIndex;
+    private final String f;
+    private final Connection con;
+    private final List<String> search;
+    private final List<String> sortBy;
 
-    public Update(DefaultTableModel model, JTable table, List<JComponent> fields, TableRowSorter<DefaultTableModel> sorter, SQLHandler sqlHandler, List<Integer> pages, int tabIndex, String f, Connection con){
+
+    public Update(DefaultTableModel model, JTable table, List<JComponent> fields, SQLHandler sqlHandler, List<Integer> pages, int tabIndex, String f, Connection con, List<String> search, List<String> sortBy){
         this.model = model;
         this.table = table;
         this.fields = fields;
-        this.sorter = sorter;
         this.sqlHandler = sqlHandler;
         this.pages = pages;
         this.tabIndex = tabIndex;
         this.f = f;
         this.con = con;
+        this.search = search;
+        this.sortBy = sortBy;
     }
     public boolean Compare(String[] data, int index){
-        List<String[]> sqlData = sqlHandler.readPageSQL(pages.get(tabIndex));
-        System.out.println(Arrays.toString(sqlData.get(index)));
+        List<String[]> sqlData = sqlHandler.readPageSQL(pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
         sqlData.remove(index);
         for (String[] cData : sqlData){
             if (cData[0].equals(data[0]) ){
@@ -88,14 +88,13 @@ public class Update implements ActionListener {
         if (table.getSelectedRow() == -1){
             JOptionPane.showMessageDialog(null, "No row selected! If you selected one, make sure it shows up on the field above by pressing again.", "Row Selection Error", JOptionPane.ERROR_MESSAGE);
         }else {
-                int rowIndex = sorter.convertRowIndexToModel(table.getSelectedRow());
+                int rowIndex = table.getSelectedRow();
                 if (Compare(data, rowIndex)){
                     JOptionPane.showMessageDialog(null, model.getColumnName(0) + " already exist", null, JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 String delVal = (String) model.getValueAt(rowIndex, 0);
                 sqlHandler.updateDb(data, delVal);
-                GUI.loadData(model, sqlHandler, pages.get(tabIndex));
                 Fields.clearFields(fields);
 
             JOptionPane.showMessageDialog(null, "Updated Successfully", "Success", JOptionPane.INFORMATION_MESSAGE);

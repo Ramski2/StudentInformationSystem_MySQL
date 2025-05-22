@@ -16,6 +16,8 @@ public class GUI extends JFrame {
             , "Program"
             , "College"};
     JTabbedPane tab = new JTabbedPane();
+    List<String> search = new ArrayList<>();
+    List<String> sortBy = new ArrayList<>();
     String[] columns;
     List<DefaultTableModel> models = new ArrayList<>();
     List<SQLHandler> sqlHandlers = new ArrayList<>();
@@ -24,7 +26,6 @@ public class GUI extends JFrame {
     List<Integer> pages = new ArrayList<>();
     Connection con;
     int page = 1;
-    int tabIndex;
 
     public GUI() {
         initComponents();
@@ -44,12 +45,12 @@ public class GUI extends JFrame {
         tab.addChangeListener(e -> {
             int index = tab.getSelectedIndex();
             if (index != -1) {
-                loadData(models.get(index), sqlHandlers.get(index), page);
+                loadData(models.get(index), sqlHandlers.get(index), page, search.get(index), sortBy.get(index));
 
                 List<JComponent> field = fields.get(index);
                     if (field.getLast() instanceof JComboBox) {
                         JComboBox<String> fk = (JComboBox<String>) field.getLast();
-                        Fields fHelper = new Fields(name, con, pages, tabIndex);
+                        Fields fHelper = new Fields(name, con, pages, index, search, sortBy);
                         fHelper.refreshfk(fk, name[index]);
                     }
                 }
@@ -99,39 +100,36 @@ public JPanel PanelLayout(String f) {
             }
         };
         models.add(model);
-        tabIndex = models.size() - 1;
+        int tabIndex = models.size() - 1;
         JTable table = new JTable(model);
         tables.add(table);
-        Fields infield = new Fields(name, con, pages, tabIndex);
+        Fields infield = new Fields(name, con, pages, tabIndex, search, sortBy);
         JScrollPane sp = new JScrollPane(table);
-
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
-        table.setRowSorter(sorter);
 
         List<JComponent> field = infield.createFields(model, f);
         fields.add(field);
         pages.add(1);
+        search.add("");
+        String[] h = sqlHandler.SQLHeaders();
+        sortBy.add("");
 
-
-        Edit_Panel edit_panel = new Edit_Panel(sorter, model, field, sqlHandler, table, con, pages, tabIndex);
-        Tab_Panel tab_panel = new Tab_Panel(sorter, model, sqlHandler, pages, tabIndex);
-
+        Edit_Panel edit_panel = new Edit_Panel(model, field, sqlHandler, table, con, pages, tabIndex, search, sortBy);
+        Tab_Panel tab_panel = new Tab_Panel(model, sqlHandler, pages, tabIndex, search, sortBy);
 
         JPanel tabPanel = tab_panel.createTabPanel(f, sp);
         JPanel editPanel = edit_panel.createEditPanelLayout(f);
 
+       table.addMouseListener(TableListener(table, model, field));
 
-       table.addMouseListener(TableListener(table, model, field, sorter));
-
-        loadData(model, sqlHandler, page);
+        loadData(model, sqlHandler, page, search.get(tabIndex), sortBy.get(tabIndex));
 
         return Layout.MainPanelLayout(MainPanel, tabPanel, editPanel);
     }
 
-    public static void loadData(DefaultTableModel model, SQLHandler sqlHandler, int page) {
+    public static void loadData(DefaultTableModel model, SQLHandler sqlHandler, int page, String search, String sortBy) {
         model.setRowCount(0);
         try {
-            List<String[]> data = sqlHandler.readPageSQL(page);
+            List<String[]> data = sqlHandler.readPageSQL(page, search, sortBy);
 
             for (String[] row : data) {
                 model.addRow(row);
@@ -158,7 +156,7 @@ public JPanel PanelLayout(String f) {
     }
 
      */
-    private MouseAdapter TableListener(JTable table, DefaultTableModel model, List<JComponent> fields, TableRowSorter<DefaultTableModel> sorter) {
+    private MouseAdapter TableListener(JTable table, DefaultTableModel model, List<JComponent> fields) {
         return new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -166,7 +164,6 @@ public JPanel PanelLayout(String f) {
                 if (selectedRow == -1) {
                     return;
                 }
-                selectedRow = sorter.convertRowIndexToModel(selectedRow);
                 for (int i = 0; i < model.getColumnCount(); i++) {
                     if (i < fields.size()) {
                         JComponent field = fields.get(i);
