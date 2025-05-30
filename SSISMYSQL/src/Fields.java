@@ -223,7 +223,7 @@ public class Fields {
 
         JPanel inputWin = Layout.InputWinLayout(fields, labels);
 
-        JLabel title = new JLabel("Add New");
+        JLabel title = new JLabel("Add New Data");
         title.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
         JButton save = new JButton("Save");
