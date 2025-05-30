@@ -32,9 +32,17 @@ public class Update implements ActionListener {
     public boolean Compare(String[] data, int index){
         List<String[]> sqlData = sqlHandler.readPageSQL(pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
         sqlData.remove(index);
-        for (String[] cData : sqlData){
-            if (cData[0].equals(data[0]) ){
-                return true;
+        if (tabIndex == 0){
+            for (String[] cData : sqlData){
+                if (cData[0].equals(data[0])){
+                    return true;
+                }
+            }
+        } else {
+            for (String[] cData : sqlData){
+                if (cData[0].equals(data[0]) || cData[1].equals(data[1])){
+                    return true;
+                }
             }
         }
         return false;
@@ -83,10 +91,14 @@ public class Update implements ActionListener {
             return;
         }
         int rowIndex = table.getSelectedRow();
-        if (Compare(data, rowIndex)){
-            JOptionPane.showMessageDialog(null, header[0] + " already exist", null, JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+            if (Compare(data, rowIndex)){
+                if (tabIndex == 0){
+                    JOptionPane.showMessageDialog(null, header[0] + " already exist", null, JOptionPane.ERROR_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(null, header[0] + " or " + header[1] + " already exist!", null, JOptionPane.ERROR_MESSAGE);
+                }
+                return;
+            }
 
         String delVal = (String) model.getValueAt(rowIndex, 0);
         sqlHandler.updateDb(data, delVal);
