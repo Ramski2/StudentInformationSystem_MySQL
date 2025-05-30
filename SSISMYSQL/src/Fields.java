@@ -2,6 +2,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.MaskFormatter;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.text.ParseException;
 import java.time.Year;
@@ -199,6 +201,12 @@ public class Fields {
         JDialog dialog = new JDialog();
         dialog.setTitle("New Entry");
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                isDialogOpen = false;
+            }
+        });
         dialog.setResizable(false);
         dialog.setModal(true);
 
