@@ -6,20 +6,19 @@ import java.sql.Connection;
 import java.text.ParseException;
 import java.time.Year;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Fields {
     private static String[] table;
-    private final Connection con;
-    private List<Integer> pages;
-    private int tabIndex;
-    private List<String> search;
-    private List<String> sortBy;
+    private static Connection con;
+    private final List<Integer> pages;
+    private final int tabIndex;
+    private final List<String> search;
+    private final List<String> sortBy;
 
     public Fields(String[] table, Connection con, List<Integer> pages, int tabIndex, List<String> search, List<String> sortBy) {
         Fields.table = table;
-        this.con = con;
+        Fields.con = con;
         this.pages = pages;
         this.tabIndex = tabIndex;
         this.search = search;
@@ -27,18 +26,18 @@ public class Fields {
     }
 
 
-    public List<JComponent> createFields(DefaultTableModel model, String f) {
+    public List<JComponent> createFields(DefaultTableModel model) {
         List<JComponent> fields = new ArrayList<>();
 
         JComboBox<String> fk = new JComboBox<>();
 
-        int index = Arrays.asList(table).indexOf(f) + 1;
+        int index = tabIndex + 1;
 
         if (index == 1) {
             JFormattedTextField field = new JFormattedTextField(format());
 
             int curryear = Year.now().getValue();
-            String idNum = getIncrement(curryear, f);
+            String idNum = getIncrement(curryear);
             field.setText(curryear + idNum);
             fields.add(field);
 
@@ -69,7 +68,7 @@ public class Fields {
         fk.addItemListener(e -> {
             if ("Add New".equals(fk.getSelectedItem())){
                 fk.setSelectedIndex(0);
-                InputWindow(f, fk);
+                InputWindow(fk);
 
             }
         });
@@ -93,18 +92,17 @@ public class Fields {
         }
     }
 
-    public static boolean existinSQl(String selectedItem, String f, Connection con){
-        int index = Arrays.asList(table).indexOf(f) + 1;
+    public static boolean NotinSQl(String selectedItem, int tabIndex, Connection con){
+        int index = tabIndex + 1;
+        if (index == table.length) return false;
         SQLHandler newSQL = new SQLHandler(table[index], con);
         List<String[]> cData = newSQL.readSQL();
         for (String[] c : cData) {
-            System.out.println(Arrays.toString(c));
-            System.out.printf("Comparing: '%s' with '%s'%n", selectedItem, c[0]);
             if (selectedItem.equals(c[0])) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     public List<String> boxValue(List<String[]> csvData) {
@@ -131,7 +129,6 @@ public class Fields {
 
     public static boolean validateID(String data) {
         String[] id = data.split("-");
-        System.out.println(id[1]);
 
         try {
             int year = Integer.parseInt(id[0]);
@@ -147,20 +144,26 @@ public class Fields {
 
     public static void clearFields(List<JComponent> fields) {
         for (JComponent tfield : fields) {
-            if (tfield instanceof JTextField) {
+            if (tfield instanceof JFormattedTextField){
+                int curryear = Year.now().getValue();
+                String idNum = getIncrement(curryear);
+                ((JFormattedTextField) tfield).setText(curryear + idNum);
+            }
+            if (tfield instanceof JTextField && !(tfield instanceof JFormattedTextField)) {
                 ((JTextField) tfield).setText("");
             } else if (tfield instanceof JComboBox<?>) {
-                ((JComboBox<?>) tfield).setSelectedItem(-1);
+                ((JComboBox<?>) tfield).setSelectedIndex(0);
             }
         }
     }
 
-    private String getIncrement(int year, String f) {
-        SQLHandler csvHandler = new SQLHandler(f.toLowerCase(), con);
-        List<String[]> csvData = csvHandler.readSQL();
+
+    private static String getIncrement(int year) {
+        SQLHandler sqlHandler = new SQLHandler(table[0], con);
+        List<String[]> sqlData = sqlHandler.readSQL();
         int maxNum = 0;
 
-        for (String[] row : csvData) {
+        for (String[] row : sqlData) {
             if (row.length > 0) {
                 String[] parts = row[0].split("-");
                 if (parts.length == 2) {
@@ -181,16 +184,15 @@ public class Fields {
     }
 
     private boolean isDialogOpen = false;
-    private void InputWindow(String f, JComboBox<String> fk) {
+    private void InputWindow(JComboBox<String> fk) {
         if (isDialogOpen) return;
         isDialogOpen = true;
-        int index = Arrays.asList(table).indexOf(f) + 1;
+        int index = tabIndex + 1;
         if (index >= table.length) return;
 
 
         SQLHandler sqlHandler = new SQLHandler(table[index].toLowerCase(), con);
         String[] data = sqlHandler.getHeaders();
-        System.out.println(data.length);
         List<JComponent> fields = new ArrayList<>();
         List<JLabel> labels = new ArrayList<>();
 
@@ -202,9 +204,9 @@ public class Fields {
 
         for (int i = 0; i < (data.length); i++){
             labels.add(new JLabel(data[i]));
-            JComponent field = (f.equals(table[0]) && i == data.length - 1) ? new JComboBox<>() : new JTextField();
+            JComponent field = (index == 1 && i == data.length - 1) ? new JComboBox<>() : new JTextField();
             if (field instanceof JComboBox<?>){
-                JComboBox<String> cb = (JComboBox<String>) field;
+                @SuppressWarnings("unchecked") JComboBox<String> cb = (JComboBox<String>) field;
                 fKey(cb, index+1);
                 cb.removeItem("Add New");
             }
@@ -219,10 +221,14 @@ public class Fields {
         JButton save = new JButton("Save");
 
         save.addActionListener(e-> {
-            new Create(sqlHandler, fields, table[index], con, pages, tabIndex, search, sortBy).actionPerformed(e);
-            isDialogOpen = false;
-            refreshfk(fk, f);
-            dialog.dispose();
+            Create create = new Create(sqlHandler, fields, con, pages, index, search, sortBy);
+            create.actionPerformed(e);
+            if (create.isSuccess()){
+                isDialogOpen = false;
+                refreshfk(fk);
+                dialog.dispose();
+            }
+
         });
 
         JPanel contentPane = Layout.AddNewContentPaneLayout(title, inputWin, save);
@@ -232,8 +238,8 @@ public class Fields {
         dialog.setVisible(true);
 
     }
-    public void refreshfk(JComboBox<String> fk, String f) {
-        int index = Arrays.asList(table).indexOf(f) + 1;
+    public void refreshfk(JComboBox<String> fk) {
+        int index = tabIndex + 1;
         if (index < table.length) {
             fKey(fk, index);
         }

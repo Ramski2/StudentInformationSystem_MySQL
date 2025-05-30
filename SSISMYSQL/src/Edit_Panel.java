@@ -1,6 +1,5 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -12,11 +11,11 @@ public class Edit_Panel {
     private final List<JComponent> fields;
     private final SQLHandler sqlHandler;
     private final JTable table;
-    private Connection con;
+    private final Connection con;
     private final List<Integer> pages;
-    private int tabIndex;
-    private List<String> search;
-    private List<String> sortBy;
+    private final int tabIndex;
+    private final List<String> search;
+    private final List<String> sortBy;
 
     public Edit_Panel(DefaultTableModel model, List<JComponent> fields, SQLHandler sqlHandler, JTable table, Connection con, List<Integer> pages, int tabIndex, List<String> search, List<String> sort) {
         this.model = model;
@@ -30,23 +29,36 @@ public class Edit_Panel {
         this.sortBy = sort;
     }
 
-    private JPanel createCRUDBtnPanel(String f) {
+    private JPanel createCRUDBtnPanel() {
         JPanel crudBtnPanel = new JPanel();
         JButton add = new JButton("Add");
         JButton del = new JButton("Delete");
         JButton upd = new JButton("Update");
 
         add.addActionListener(e-> {
-            new Create(sqlHandler, fields, f, con, pages, tabIndex, search, sortBy).actionPerformed(e);
-            GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+            Create create = new Create(sqlHandler, fields, con, pages, tabIndex, search, sortBy);
+            create.actionPerformed(e);
+            if (create.isSuccess()){
+                GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+            }
         });
+
         del.addActionListener(e -> {
-            new Delete(model, table, sqlHandler, tabIndex, pages).actionPerformed(e);
-            GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+            Delete delete = new Delete(model, table, sqlHandler);
+            delete.actionPerformed(e);
+            if (delete.isSuccess()){
+                GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+            }
+
         });
+
         upd.addActionListener(e -> {
-            new Update(model, table, fields, sqlHandler, pages, tabIndex, f, con, search, sortBy).actionPerformed(e);
-            GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+            Update update = new Update(model, table, fields, sqlHandler, pages, tabIndex, con, search, sortBy);
+            update.actionPerformed(e);
+            if (update.isSuccess()){
+                GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
+            }
+
         });
 
 
@@ -65,7 +77,7 @@ public class Edit_Panel {
         return Layout.InputPanelLayout(inputPanel, tabName, fields);
     }
 
-    protected JPanel createEditPanelLayout(String f) {
+    protected JPanel createEditPanelLayout() {
         JPanel editPanel = new JPanel();
 
         JLabel editTitle = new JLabel("Table Edit");
@@ -80,7 +92,7 @@ public class Edit_Panel {
         }
 
         JPanel inputPanel = createInputPanel();
-        JPanel crudBtnPanel = createCRUDBtnPanel(f);
+        JPanel crudBtnPanel = createCRUDBtnPanel();
 
         for (Component c : crudBtnPanel.getComponents()) {
             if (c instanceof JButton) {

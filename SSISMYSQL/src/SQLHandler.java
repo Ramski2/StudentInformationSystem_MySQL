@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +58,8 @@ public class SQLHandler {
                 data.add(row);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            JOptionPane.showMessageDialog(null, "Failed to read data: " + e.getMessage(),
+                    "Read Error", JOptionPane.ERROR_MESSAGE);
         }
         return data;
     }
@@ -65,16 +67,23 @@ public class SQLHandler {
         List<String[]> data = new ArrayList<>();
         String[] sqlHeader = SQLHeaders();
         List<String> validateSort = List.of(sqlHeader);
-        if (!validateSort.contains(sort)){
-            sort = (sqlHeader[0]);
+        if (sort.isEmpty()){
+            sort = sqlHeader[0] + " ASC";
+        }
+        String sortColumn = sort.substring(0, sort.length() - 4).replace(" ", "");
+        String sortDir = sort.substring(sort.length()-4).replace(" ", "");
+        if (!validateSort.contains(sortColumn)){
+            sortColumn = (sqlHeader[0]);
         }
         int pageSize = 17;
         int offset = (page - 1) * pageSize;
 
-        String sql = "SELECT * FROM ssis." + table + " WHERE CONCAT_WS " + " (' ', " + String.join(",", sqlHeader) + ")" + " LIKE ?" +  " ORDER BY " + sort + " ASC LIMIT ? OFFSET ?";
-        System.out.println(sql);
+        String sql = "SELECT * FROM ssis." + table +
+                " WHERE CONCAT_WS " + " (' ', " + String.join(",", sqlHeader) + ")" +
+                " LIKE ?" +  " ORDER BY " + sortColumn + " " + sortDir + "," + sqlHeader[0] +
+                " LIMIT ? OFFSET ?";
+
         String keyword = "%" + search + "%";
-        System.out.println(keyword);
 
         try(PreparedStatement pst = con.prepareStatement(sql)){
             pst.setString(1, keyword);
@@ -87,12 +96,14 @@ public class SQLHandler {
             while (rs.next()) {
                 String[] row = new String[colCount];
                 for (int i = 0; i < colCount; i++) {
-                    row[i] = rs.getString(i+1);
+                    String value = rs.getString(i + 1);
+                    row[i] = (value != null) ? value : "N/A";
                 }
                 data.add(row);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            JOptionPane.showMessageDialog(null, "Failed to read data: " + e.getMessage(),
+                    "Read Error", JOptionPane.ERROR_MESSAGE);
         }
         return data;
     }
@@ -111,7 +122,8 @@ public class SQLHandler {
                 readSQL();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            JOptionPane.showMessageDialog(null, "Failed to save data: " + e.getMessage(),
+                    "Save Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     public void updateDb(String[] updatedData, String id){
@@ -132,7 +144,8 @@ public class SQLHandler {
             pst.setString(updatedData.length + 1, id);
             pst.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            JOptionPane.showMessageDialog(null, "Failed to update data: " + e.getMessage(),
+                    "Update Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -142,7 +155,8 @@ public class SQLHandler {
             ResultSet rs = pst.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to count students: " + e.getMessage(), e);
+            JOptionPane.showMessageDialog(null, "Failed to count data: " + e.getMessage(),
+                    "Save Error", JOptionPane.ERROR_MESSAGE);
         }
         return 0;
     }
@@ -157,7 +171,8 @@ public class SQLHandler {
             pst.setString(1, id);
             pst.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            JOptionPane.showMessageDialog(null, "Failed to delete data: " + e.getMessage(),
+                    "Delete Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

@@ -1,6 +1,5 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyAdapter;
@@ -12,8 +11,8 @@ public class Tab_Panel {
     private final SQLHandler sqlHandler;
     private final List<Integer>pages;
     private final int tabIndex;
-    private List<String> search;
-    private List<String> sortBy;
+    private final List<String> search;
+    private final List<String> sortBy;
 
     public Tab_Panel(DefaultTableModel model, SQLHandler sqlHandler, List<Integer> pages, int tabIndex, List<String> search, List<String> sortBy) {
         this.model = model;
@@ -32,20 +31,25 @@ public class Tab_Panel {
 
         String[] srch = sqlHandler.getHeaders();
         for (String s : srch) {
-            sortByBox.addItem(s);
+            sortByBox.addItem(s + " ASC");
+            sortByBox.addItem(s + " DESC");
         }
 
         sortByBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String searchString = search.get(tabIndex);
                 String sortString = (String) e.getItem();
-                String sort = sortString.toLowerCase().replace(" ", "_");
+
+                int len = sortString.length();
+                String prefix = sortString.substring(0, len - 5).toLowerCase().replace(" ", "_");
+                String suffix = sortString.substring(len - 5);  // last 4 characters unchanged
+                String sort = prefix + suffix;
                 sortBy.set(tabIndex, sort);
                     GUI.loadData(model, sqlHandler, pages.get(tabIndex), searchString, sortBy.get(tabIndex));
             }
         });
 
-        srchfields.addKeyListener(srchKeyListener(srchfields, sortByBox));
+        srchfields.addKeyListener(srchKeyListener(srchfields));
 
         return Layout.SearchPanelLayout(searchPanel, srchfields, sortlbl, sortByBox);
     }
@@ -97,7 +101,7 @@ public class Tab_Panel {
         return Layout.TabPanelLayout(tabPanel, sp, tabTitle, editTable, searchPanel, refresh, pagePanel);
     }
 
-    private KeyAdapter srchKeyListener(JTextField tsearch, JComboBox<String> srchBy) {
+    private KeyAdapter srchKeyListener(JTextField tsearch) {
         return new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {

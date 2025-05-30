@@ -1,6 +1,5 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -25,7 +24,6 @@ public class GUI extends JFrame {
     List<List<JComponent>> fields = new ArrayList<>();
     List<Integer> pages = new ArrayList<>();
     Connection con;
-    int page = 1;
 
     public GUI() {
         initComponents();
@@ -45,15 +43,15 @@ public class GUI extends JFrame {
         tab.addChangeListener(e -> {
             int index = tab.getSelectedIndex();
             if (index != -1) {
-                loadData(models.get(index), sqlHandlers.get(index), page, search.get(index), sortBy.get(index));
+                loadData(models.get(index), sqlHandlers.get(index), pages.get(index), search.get(index), sortBy.get(index));
 
                 List<JComponent> field = fields.get(index);
                     if (field.getLast() instanceof JComboBox) {
-                        JComboBox<String> fk = (JComboBox<String>) field.getLast();
+                        @SuppressWarnings("unchecked") JComboBox<String> fk = (JComboBox<String>) field.getLast();
                         Fields fHelper = new Fields(name, con, pages, index, search, sortBy);
-                        fHelper.refreshfk(fk, name[index]);
+                        fHelper.refreshfk(fk);
                     }
-                }
+            }
         });
 
         GroupLayout layout = new GroupLayout(getContentPane());
@@ -75,22 +73,20 @@ public class GUI extends JFrame {
 
     }
 
-public JPanel PanelLayout(String f) {
+    public JPanel PanelLayout(String f) {
         JPanel MainPanel = new JPanel();
         MainPanel.setPreferredSize(new Dimension(740, 440));
         GroupLayout panelLayout = new GroupLayout(MainPanel);
         MainPanel.setLayout(panelLayout);
 
-    try {
-        con =Database.connect();
-    } catch (SQLException e) {
-        throw new RuntimeException(e);
-    }
+        try {
+            con = Database.connect();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
-    SQLHandler sqlHandler = new SQLHandler(f.toLowerCase(), con);
-    sqlHandlers.add(sqlHandler);
-
-
+        SQLHandler sqlHandler = new SQLHandler(f.toLowerCase(), con);
+        sqlHandlers.add(sqlHandler);
 
         columns = sqlHandler.getHeaders();
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
@@ -106,22 +102,21 @@ public JPanel PanelLayout(String f) {
         Fields infield = new Fields(name, con, pages, tabIndex, search, sortBy);
         JScrollPane sp = new JScrollPane(table);
 
-        List<JComponent> field = infield.createFields(model, f);
+        List<JComponent> field = infield.createFields(model);
         fields.add(field);
         pages.add(1);
         search.add("");
-        String[] h = sqlHandler.SQLHeaders();
         sortBy.add("");
 
         Edit_Panel edit_panel = new Edit_Panel(model, field, sqlHandler, table, con, pages, tabIndex, search, sortBy);
         Tab_Panel tab_panel = new Tab_Panel(model, sqlHandler, pages, tabIndex, search, sortBy);
 
         JPanel tabPanel = tab_panel.createTabPanel(f, sp);
-        JPanel editPanel = edit_panel.createEditPanelLayout(f);
+        JPanel editPanel = edit_panel.createEditPanelLayout();
 
        table.addMouseListener(TableListener(table, model, field));
 
-        loadData(model, sqlHandler, page, search.get(tabIndex), sortBy.get(tabIndex));
+        loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sortBy.get(tabIndex));
 
         return Layout.MainPanelLayout(MainPanel, tabPanel, editPanel);
     }
