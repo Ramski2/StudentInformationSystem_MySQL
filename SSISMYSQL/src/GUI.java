@@ -134,23 +134,6 @@ public class GUI extends JFrame {
         }
     }
 
-    /*public static void updateReferences(String refval, String f, Connection con) {
-        int index = Arrays.asList(name).indexOf(f) - 1;
-        SQLHandler ref;
-        if (index > -1 && index < name.length) {
-            ref = new SQLHandler(name[index], con);
-            List<String[]> refCSV = ref.readSQL();
-            for (String[] refData : refCSV) {
-                if (refData[refData.length - 1].equals(refval)) {
-                    refData[refData.length - 1] = null;
-                    ref.updateDb(refData);
-                }
-            }
-
-        }
-    }
-
-     */
     private MouseAdapter TableListener(JTable table, DefaultTableModel model, List<JComponent> fields) {
         return new MouseAdapter() {
             @Override
