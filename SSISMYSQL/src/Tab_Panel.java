@@ -13,6 +13,7 @@ public class Tab_Panel {
     private final int tabIndex;
     private final List<String> search;
     private final List<String> sortBy;
+    JLabel pageLbl;
 
     public Tab_Panel(DefaultTableModel model, SQLHandler sqlHandler, List<Integer> pages, int tabIndex, List<String> search, List<String> sortBy) {
         this.model = model;
@@ -42,7 +43,7 @@ public class Tab_Panel {
 
                 int len = sortString.length();
                 String prefix = sortString.substring(0, len - 5).toLowerCase().replace(" ", "_");
-                String suffix = sortString.substring(len - 5);  // last 4 characters unchanged
+                String suffix = sortString.substring(len - 5);
                 String sort = prefix + suffix;
                 sortBy.set(tabIndex, sort);
                     GUI.loadData(model, sqlHandler, pages.get(tabIndex), searchString, sortBy.get(tabIndex));
@@ -58,27 +59,28 @@ public class Tab_Panel {
         JPanel pagePanel = new JPanel();
         JButton prevBtn = new JButton("Prev");
         JButton nextBtn = new JButton("Next");
-        JLabel pageLbl = new JLabel();
+        pageLbl = new JLabel();
         prevBtn.addActionListener(e -> {
             int page = pages.get(tabIndex);
             if (page > 1) {
                 page--;
                 pages.set(tabIndex, page);
                 GUI.loadData(model, sqlHandler, page, search.get(tabIndex), sortBy.get(tabIndex));
-                pageLbl.setText("Page: " + pages.get(tabIndex));
             }
+            pageLbl.setText("Page: " + pages.get(tabIndex));
         });
         nextBtn.addActionListener(e -> {
             int page = pages.get(tabIndex);
-            int totalCnt = sqlHandler.getTotalCount();
+            int totalCnt = sqlHandler.getCount(search.get(tabIndex));
             if ((page * 17) < totalCnt) {
                 page++;
                 pages.set(tabIndex, page);
                 GUI.loadData(model, sqlHandler, page, search.get(tabIndex), sortBy.get(tabIndex));
-                pageLbl.setText("Page: " + pages.get(tabIndex));
             }
+            pageLbl.setText("Page: " + pages.get(tabIndex));
         });
         pageLbl.setText("Page: " + pages.get(tabIndex));
+
         return Layout.pagePanelLayout(pagePanel, prevBtn, nextBtn, pageLbl);
     }
 
@@ -109,7 +111,9 @@ public class Tab_Panel {
                 search.set(tabIndex, searchString);
                 if (sortBy != null) {
                     String sort = sortBy.get(tabIndex).toLowerCase().replace(" ", "_");
+                    pages.set(tabIndex, 1);
                     GUI.loadData(model, sqlHandler, pages.get(tabIndex), search.get(tabIndex), sort);
+                    pageLbl.setText("Page: " + pages.get(tabIndex));
                 }
 
             }

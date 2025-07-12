@@ -149,9 +149,14 @@ public class SQLHandler {
         }
     }
 
-    public int getTotalCount(){
-        try {
-            PreparedStatement pst = con.prepareStatement("SELECT COUNT(*) FROM ssis." + table);
+    public int getCount(String search){
+        String[] sqlHeader = SQLHeaders();
+        String keyword = "%" + search + "%";
+        String sql = "SELECT COUNT(*) FROM ssis." + table +
+                " WHERE CONCAT_WS(' ', " + String.join(",", sqlHeader) + ") LIKE ?";
+
+        try (PreparedStatement pst = con.prepareStatement(sql)) {
+            pst.setString(1, keyword);
             ResultSet rs = pst.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
